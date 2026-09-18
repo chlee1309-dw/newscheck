@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'NewsCheck - ' + ${pageTitle}">NewsCheck - 주식 뉴스 모음</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body {
+            font-family: -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 16px;
+            background: #fafafa;
+            color: #1a1a1a;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .meta { color: #666; font-size: 0.9rem; }
+        nav { display: flex; gap: 8px; margin: 16px 0; }
+        nav a {
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.88rem;
+            text-decoration: none;
+            color: #444;
+            background: #eee;
+        }
+        nav a.active { background: #1a56db; color: #fff; }
+        form { margin: 16px 0 24px; display: inline-block; }
+        button {
+            background: #1a56db;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        button:hover { background: #1544ad; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        li {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+        }
+        .title { font-weight: 600; text-decoration: none; color: #111; }
+        .title:hover { text-decoration: underline; }
+        .desc { margin: 6px 0; color: #444; font-size: 0.92rem; line-height: 1.4; }
+        .row-meta { font-size: 0.8rem; color: #888; display: flex; gap: 10px; flex-wrap: wrap; }
+        .badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: #3538cd;
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 0.75rem;
+        }
+        .empty { color: #666; padding: 40px 0; text-align: center; }
+        @media (prefers-color-scheme: dark) {
+            body { background: #121212; color: #eaeaea; }
+            li { background: #1e1e1e; border-color: #2c2c2c; }
+            .title { color: #f0f0f0; }
+            .desc { color: #bbb; }
+            .meta, .row-meta { color: #999; }
+            .badge { background: #262a4d; color: #b3b8ff; }
+            nav a { background: #262626; color: #ccc; }
+            nav a.active { background: #3b6fe0; color: #fff; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1 th:text="'📈 ' + ${pageTitle}"></h1>
+    <span class="meta" th:if="${lastCollectedAt != null}">
+        마지막 수집: <span th:text="${#temporals.format(lastCollectedAt, 'yyyy-MM-dd HH:mm')}"></span>
+        (5시간 간격 자동 수집)
+    </span>
+    <span class="meta" th:if="${lastCollectedAt == null}">아직 수집된 뉴스가 없습니다.</span>
+</header>
+
+<nav>
+    <a th:href="@{/}" th:classappend="${activeCategory == 'focus'} ? 'active'">빅테크 · 주요 종목</a>
+    <a th:href="@{/general}" th:classappend="${activeCategory == 'general'} ? 'active'">전체 주식 뉴스</a>
+</nav>
+
+<form th:action="@{/collect}" method="post">
+    <input type="hidden" name="redirectTo" th:value="${activeCategory == 'general'} ? '/general' : '/'">
+    <button type="submit">지금 수집하기</button>
+</form>
+
+<ul th:if="${!articles.isEmpty()}">
+    <li th:each="article : ${articles}">
+        <a class="title" th:href="${article.originalLink != null ? article.originalLink : article.link}"
+           th:text="${article.title}" target="_blank" rel="noopener"></a>
+        <p class="desc" th:text="${article.description}"></p>
+        <div class="row-meta">
+            <span class="badge" th:text="${article.keyword}"></span>
+            <span th:text="${article.source}"></span>
+            <span th:if="${article.pubDate != null}"
+                  th:text="${#temporals.format(article.pubDate, 'yyyy-MM-dd HH:mm')}"></span>
+        </div>
+    </li>
+</ul>
+
+<p class="empty" th:if="${articles.isEmpty()}">
+    수집된 뉴스가 없습니다. 네이버 API 키가 설정되어 있는지 확인하거나 "지금 수집하기"를 눌러보세요.
+</p>
+</body>
+</html>

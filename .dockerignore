@@ -1,0 +1,7 @@
+.git
+.gradle
+.idea
+build
+data
+src/main/resources/application-local.yaml
+*.iml
