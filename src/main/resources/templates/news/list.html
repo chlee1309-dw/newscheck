@@ -33,17 +33,6 @@
             background: #eee;
         }
         nav a.active { background: #1a56db; color: #fff; }
-        form { margin: 16px 0 24px; display: inline-block; }
-        button {
-            background: #1a56db;
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-        button:hover { background: #1544ad; }
         ul { list-style: none; padding: 0; margin: 0; }
         li {
             background: #fff;
@@ -65,7 +54,16 @@
             font-size: 0.75rem;
         }
         .empty { color: #666; padding: 40px 0; text-align: center; }
+        .disclaimer {
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e5e5;
+            color: #888;
+            font-size: 0.78rem;
+            line-height: 1.5;
+        }
         @media (prefers-color-scheme: dark) {
+            .disclaimer { border-color: #2c2c2c; color: #999; }
             body { background: #121212; color: #eaeaea; }
             li { background: #1e1e1e; border-color: #2c2c2c; }
             .title { color: #f0f0f0; }
@@ -92,11 +90,6 @@
     <a th:href="@{/general}" th:classappend="${activeCategory == 'general'} ? 'active'">전체 주식 뉴스</a>
 </nav>
 
-<form th:action="@{/collect}" method="post">
-    <input type="hidden" name="redirectTo" th:value="${activeCategory == 'general'} ? '/general' : '/'">
-    <button type="submit">지금 수집하기</button>
-</form>
-
 <ul th:if="${!articles.isEmpty()}">
     <li th:each="article : ${articles}">
         <a class="title" th:href="${article.originalLink != null ? article.originalLink : article.link}"
@@ -112,7 +105,12 @@
 </ul>
 
 <p class="empty" th:if="${articles.isEmpty()}">
-    수집된 뉴스가 없습니다. 네이버 API 키가 설정되어 있는지 확인하거나 "지금 수집하기"를 눌러보세요.
+    수집된 뉴스가 없습니다. 네이버 API 키가 설정되어 있는지 확인해 주세요.
 </p>
+
+<footer class="disclaimer">
+    본 서비스는 뉴스 제목과 링크를 모아 보여주는 정보 제공용 서비스이며, 특정 종목의 매수·매도를 권유하지 않습니다.
+    기사의 저작권은 각 언론사에 있고, 투자 판단과 그에 따른 책임은 투자자 본인에게 있습니다.
+</footer>
 </body>
 </html>

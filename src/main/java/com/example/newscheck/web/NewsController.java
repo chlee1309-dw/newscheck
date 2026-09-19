@@ -7,8 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -17,7 +15,6 @@ import java.util.List;
 public class NewsController {
 
     private final NewsArticleRepository repository;
-    private final NewsCollectorService collectorService;
 
     @GetMapping("/")
     public String focusList(Model model) {
@@ -38,11 +35,5 @@ public class NewsController {
         model.addAttribute("pageTitle", pageTitle);
         model.addAttribute("activeCategory", category);
         return "news/list";
-    }
-
-    @PostMapping("/collect")
-    public String collectNow(@RequestParam(defaultValue = "/") String redirectTo) {
-        collectorService.collectNews();
-        return "redirect:" + ("/general".equals(redirectTo) ? "/general" : "/");
     }
 }
