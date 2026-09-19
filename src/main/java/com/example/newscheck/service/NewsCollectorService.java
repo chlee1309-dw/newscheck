@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.net.URI;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -23,6 +24,10 @@ public class NewsCollectorService {
 
     public static final String CATEGORY_FOCUS = "focus";
     public static final String CATEGORY_GENERAL = "general";
+    public static final int RETENTION_DAYS = 7;
+
+    private static final ZoneId NEWS_ZONE = ZoneId.of("Asia/Seoul");
+
     public static final String CATEGORY_DEPOSIT = "deposit";
     public static final String CATEGORY_REAL_ESTATE = "realestate";
 
@@ -39,6 +44,11 @@ public class NewsCollectorService {
     @Scheduled(initialDelayString = "PT0S", fixedRateString = "${newscheck.collect.interval:PT1H}")
     public void collectNews() {
         log.info("금융 뉴스 수집을 시작합니다.");
+
+        LocalDateTime cutoff = LocalDateTime.now(NEWS_ZONE).minusDays(RETENTION_DAYS);
+        int deletedCount = repository.deleteByPubDateBefore(cutoff);
+        log.info("{}일이 지난 기사를 삭제했습니다. 삭제 건수: {}", RETENTION_DAYS, deletedCount);
+
         int savedCount = 0;
 
         for (Map.Entry<String, List<String>> entry : KEYWORDS_BY_CATEGORY.entrySet()) {
@@ -46,7 +56,7 @@ public class NewsCollectorService {
             for (String keyword : entry.getValue()) {
                 List<NaverNewsResponse.Item> items = naverNewsClient.searchNews(keyword);
                 for (NaverNewsResponse.Item item : items) {
-                    if (saveIfAbsent(item, keyword, category)) {
+                    if (saveIfAbsent(item, keyword, category, cutoff)) {
                         savedCount++;
                     }
                 }
@@ -56,8 +66,13 @@ public class NewsCollectorService {
         log.info("금융 뉴스 수집을 완료했습니다. 신규 저장 건수: {}", savedCount);
     }
 
-    private boolean saveIfAbsent(NaverNewsResponse.Item item, String keyword, String category) {
+    private boolean saveIfAbsent(NaverNewsResponse.Item item, String keyword, String category, LocalDateTime cutoff) {
         if (item.link() == null || repository.existsByLink(item.link())) {
+            return false;
+        }
+
+        LocalDateTime pubDate = parsePubDate(item.pubDate());
+        if (pubDate.isBefore(cutoff)) {
             return false;
         }
 
@@ -69,7 +84,7 @@ public class NewsCollectorService {
         article.setSource(extractSource(item.originallink() != null ? item.originallink() : item.link()));
         article.setKeyword(keyword);
         article.setCategory(category);
-        article.setPubDate(parsePubDate(item.pubDate()));
+        article.setPubDate(pubDate);
         article.setCollectedAt(LocalDateTime.now());
 
         repository.save(article);
