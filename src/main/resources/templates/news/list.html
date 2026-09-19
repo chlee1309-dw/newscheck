@@ -54,6 +54,11 @@
             font-size: 0.75rem;
         }
         .empty { color: #666; padding: 40px 0; text-align: center; }
+        .filter { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 16px; font-size: 0.88rem; color: #444; cursor: pointer; }
+        li.read .title { color: #888; font-weight: 400; }
+        li.read .desc { opacity: 0.6; }
+        .read-badge { display: none; }
+        li.read .read-badge { display: inline; color: #888; }
         .disclaimer {
             margin-top: 32px;
             padding-top: 16px;
@@ -64,6 +69,9 @@
         }
         @media (prefers-color-scheme: dark) {
             .disclaimer { border-color: #2c2c2c; color: #999; }
+            .filter { color: #ccc; }
+            li.read .title { color: #777; }
+            li.read .read-badge { color: #777; }
             body { background: #121212; color: #eaeaea; }
             li { background: #1e1e1e; border-color: #2c2c2c; }
             .title { color: #f0f0f0; }
@@ -92,8 +100,12 @@
     <a th:href="@{/realestate}" th:classappend="${activeCategory == 'realestate'} ? 'active'">부동산</a>
 </nav>
 
-<ul th:if="${!articles.isEmpty()}">
-    <li th:each="article : ${articles}">
+<label class="filter" th:if="${!articles.isEmpty()}">
+    <input type="checkbox" id="unread-only"> 안 읽은 것만 보기
+</label>
+
+<ul id="news-list" th:if="${!articles.isEmpty()}">
+    <li th:each="article : ${articles}" th:attr="data-id=${article.id}">
         <a class="title" th:href="${article.originalLink != null ? article.originalLink : article.link}"
            th:text="${article.title}" target="_blank" rel="noopener"></a>
         <p class="desc" th:text="${article.description}"></p>
@@ -102,9 +114,12 @@
             <span th:text="${article.source}"></span>
             <span th:if="${article.pubDate != null}"
                   th:text="${#temporals.format(article.pubDate, 'yyyy-MM-dd HH:mm')}"></span>
+            <span class="read-badge">읽음</span>
         </div>
     </li>
 </ul>
+
+<p id="unread-empty" class="empty" hidden>안 읽은 뉴스가 없습니다.</p>
 
 <p class="empty" th:if="${articles.isEmpty()}">
     수집된 뉴스가 없습니다. 네이버 API 키가 설정되어 있는지 확인해 주세요.
@@ -114,5 +129,104 @@
     본 서비스는 뉴스 제목과 링크를 모아 보여주는 정보 제공용 서비스이며, 특정 종목·금융상품·부동산의 매매나 가입을 권유하지 않습니다.
     기사의 저작권은 각 언론사에 있고, 투자·금융상품 가입·부동산 거래 등 모든 판단과 그에 따른 책임은 이용자 본인에게 있습니다.
 </footer>
+
+<script>
+    // 읽음 기록은 이 브라우저의 localStorage에만 저장되며 서버로 전송되지 않습니다.
+    (function () {
+        var list = document.getElementById('news-list');
+        var filterBox = document.getElementById('unread-only');
+        var emptyMsg = document.getElementById('unread-empty');
+        if (!list || !filterBox) {
+            return;
+        }
+
+        var READ_KEY = 'newscheck.read';
+        var FILTER_KEY = 'newscheck.unreadOnly';
+        // 기사는 발행 7일 뒤 서버에서 삭제되므로, 읽음 기록은 그보다 조금 더 보관한 뒤 정리한다.
+        var KEEP_MS = 8 * 24 * 60 * 60 * 1000;
+
+        function loadRead() {
+            try {
+                var value = JSON.parse(localStorage.getItem(READ_KEY) || '{}');
+                return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveRead(map) {
+            try {
+                localStorage.setItem(READ_KEY, JSON.stringify(map));
+            } catch (e) {
+                // 저장이 막힌 환경에서는 이번 방문 동안만 표시된다.
+            }
+        }
+
+        var readMap = loadRead();
+        var now = Date.now();
+        var pruned = false;
+        Object.keys(readMap).forEach(function (id) {
+            if (now - readMap[id] > KEEP_MS) {
+                delete readMap[id];
+                pruned = true;
+            }
+        });
+        if (pruned) {
+            saveRead(readMap);
+        }
+
+        var items = Array.prototype.slice.call(list.querySelectorAll('li'));
+
+        function applyFilter() {
+            var unreadOnly = filterBox.checked;
+            var visible = 0;
+            items.forEach(function (li) {
+                var isRead = !!readMap[li.getAttribute('data-id')];
+                li.classList.toggle('read', isRead);
+                li.hidden = unreadOnly && isRead;
+                if (!li.hidden) {
+                    visible++;
+                }
+            });
+            emptyMsg.hidden = !(unreadOnly && visible === 0);
+        }
+
+        function markRead(li) {
+            readMap[li.getAttribute('data-id')] = Date.now();
+            saveRead(readMap);
+            // 필터가 켜져 있어도 방금 연 기사는 바로 사라지지 않고 흐리게만 표시한다.
+            li.classList.add('read');
+        }
+
+        function onLinkOpen(event) {
+            if (event.type === 'auxclick' && event.button !== 1) {
+                return;
+            }
+            var link = event.target.closest('a.title');
+            if (link) {
+                markRead(link.closest('li'));
+            }
+        }
+
+        list.addEventListener('click', onLinkOpen);
+        list.addEventListener('auxclick', onLinkOpen);
+
+        try {
+            filterBox.checked = localStorage.getItem(FILTER_KEY) === '1';
+        } catch (e) {
+            filterBox.checked = false;
+        }
+        filterBox.addEventListener('change', function () {
+            try {
+                localStorage.setItem(FILTER_KEY, filterBox.checked ? '1' : '0');
+            } catch (e) {
+                // 무시
+            }
+            applyFilter();
+        });
+
+        applyFilter();
+    })();
+</script>
 </body>
 </html>
