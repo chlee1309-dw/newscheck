@@ -23,10 +23,14 @@ public class NewsCollectorService {
 
     public static final String CATEGORY_FOCUS = "focus";
     public static final String CATEGORY_GENERAL = "general";
+    public static final String CATEGORY_DEPOSIT = "deposit";
+    public static final String CATEGORY_REAL_ESTATE = "realestate";
 
     private static final Map<String, List<String>> KEYWORDS_BY_CATEGORY = Map.of(
             CATEGORY_FOCUS, List.of("빅테크", "급등주", "SK하이닉스", "삼성전자"),
-            CATEGORY_GENERAL, List.of("코스피", "코스닥", "증시", "주식시장", "주식")
+            CATEGORY_GENERAL, List.of("코스피", "코스닥", "증시", "주식시장", "주식"),
+            CATEGORY_DEPOSIT, List.of("예금", "적금", "예금금리", "기준금리"),
+            CATEGORY_REAL_ESTATE, List.of("부동산", "아파트", "청약", "전세")
     );
 
     private final NaverNewsClient naverNewsClient;
@@ -34,7 +38,7 @@ public class NewsCollectorService {
 
     @Scheduled(initialDelayString = "PT0S", fixedRateString = "PT5H")
     public void collectNews() {
-        log.info("주식 뉴스 수집을 시작합니다.");
+        log.info("금융 뉴스 수집을 시작합니다.");
         int savedCount = 0;
 
         for (Map.Entry<String, List<String>> entry : KEYWORDS_BY_CATEGORY.entrySet()) {
@@ -49,7 +53,7 @@ public class NewsCollectorService {
             }
         }
 
-        log.info("주식 뉴스 수집을 완료했습니다. 신규 저장 건수: {}", savedCount);
+        log.info("금융 뉴스 수집을 완료했습니다. 신규 저장 건수: {}", savedCount);
     }
 
     private boolean saveIfAbsent(NaverNewsResponse.Item item, String keyword, String category) {

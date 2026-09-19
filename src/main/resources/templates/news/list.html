@@ -2,7 +2,7 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="'NewsCheck - ' + ${pageTitle}">NewsCheck - 주식 뉴스 모음</title>
+    <title th:text="'NewsCheck - ' + ${pageTitle}">NewsCheck - 금융 뉴스 모음</title>
     <style>
         :root { color-scheme: light dark; }
         body {
@@ -23,7 +23,7 @@
         }
         h1 { font-size: 1.5rem; margin: 0; }
         .meta { color: #666; font-size: 0.9rem; }
-        nav { display: flex; gap: 8px; margin: 16px 0; }
+        nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
         nav a {
             padding: 6px 14px;
             border-radius: 999px;
@@ -88,6 +88,8 @@
 <nav>
     <a th:href="@{/}" th:classappend="${activeCategory == 'focus'} ? 'active'">빅테크 · 주요 종목</a>
     <a th:href="@{/general}" th:classappend="${activeCategory == 'general'} ? 'active'">전체 주식 뉴스</a>
+    <a th:href="@{/deposit}" th:classappend="${activeCategory == 'deposit'} ? 'active'">예금 · 적금</a>
+    <a th:href="@{/realestate}" th:classappend="${activeCategory == 'realestate'} ? 'active'">부동산</a>
 </nav>
 
 <ul th:if="${!articles.isEmpty()}">
@@ -109,8 +111,8 @@
 </p>
 
 <footer class="disclaimer">
-    본 서비스는 뉴스 제목과 링크를 모아 보여주는 정보 제공용 서비스이며, 특정 종목의 매수·매도를 권유하지 않습니다.
-    기사의 저작권은 각 언론사에 있고, 투자 판단과 그에 따른 책임은 투자자 본인에게 있습니다.
+    본 서비스는 뉴스 제목과 링크를 모아 보여주는 정보 제공용 서비스이며, 특정 종목·금융상품·부동산의 매매나 가입을 권유하지 않습니다.
+    기사의 저작권은 각 언론사에 있고, 투자·금융상품 가입·부동산 거래 등 모든 판단과 그에 따른 책임은 이용자 본인에게 있습니다.
 </footer>
 </body>
 </html>

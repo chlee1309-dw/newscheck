@@ -26,6 +26,16 @@ public class NewsController {
         return renderList(model, NewsCollectorService.CATEGORY_GENERAL, "전체 주식 뉴스");
     }
 
+    @GetMapping("/deposit")
+    public String depositList(Model model) {
+        return renderList(model, NewsCollectorService.CATEGORY_DEPOSIT, "예금 · 적금 뉴스");
+    }
+
+    @GetMapping("/realestate")
+    public String realEstateList(Model model) {
+        return renderList(model, NewsCollectorService.CATEGORY_REAL_ESTATE, "부동산 뉴스");
+    }
+
     private String renderList(Model model, String category, String pageTitle) {
         List<NewsArticle> articles = repository.findTop200ByCategoryOrderByPubDateDesc(category);
         NewsArticle latest = repository.findTopByCategoryOrderByCollectedAtDesc(category);
