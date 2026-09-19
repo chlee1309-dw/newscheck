@@ -47,6 +47,8 @@ public class NewsController {
 
         model.addAttribute("articles", articles);
         model.addAttribute("lastCollectedAt", latest == null ? null : latest.getCollectedAt());
+        // 새 기사 판단의 기준 시각. 브라우저 시계 대신 서버 시각을 써서 시계 오차의 영향을 피한다.
+        model.addAttribute("serverNow", System.currentTimeMillis());
         model.addAttribute("collectIntervalHours", Math.max(1, collectInterval.toHours()));
         model.addAttribute("pageTitle", pageTitle);
         model.addAttribute("activeCategory", category);

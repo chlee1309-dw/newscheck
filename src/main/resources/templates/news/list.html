@@ -55,6 +55,20 @@
         }
         .empty { color: #666; padding: 40px 0; text-align: center; }
         .filter { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 16px; font-size: 0.88rem; color: #444; cursor: pointer; }
+        .new-badge {
+            display: none;
+            background: #e02424;
+            color: #fff;
+            border-radius: 4px;
+            padding: 1px 6px;
+            margin-right: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            vertical-align: 1px;
+        }
+        li.new { border-left: 3px solid #e02424; }
+        li.new .new-badge { display: inline-block; }
+        .new-count { margin-left: 12px; color: #e02424; font-weight: 600; }
         li.read .title { color: #888; font-weight: 400; }
         li.read .desc { opacity: 0.6; }
         .read-badge { display: none; }
@@ -70,6 +84,9 @@
         @media (prefers-color-scheme: dark) {
             .disclaimer { border-color: #2c2c2c; color: #999; }
             .filter { color: #ccc; }
+            li.new { border-left-color: #f05252; }
+            .new-badge { background: #f05252; }
+            .new-count { color: #f98080; }
             li.read .title { color: #777; }
             li.read .read-badge { color: #777; }
             body { background: #121212; color: #eaeaea; }
@@ -102,11 +119,14 @@
 
 <label class="filter" th:if="${!articles.isEmpty()}">
     <input type="checkbox" id="unread-only"> 안 읽은 것만 보기
+    <span class="new-count" id="new-count" hidden></span>
 </label>
 
-<ul id="news-list" th:if="${!articles.isEmpty()}">
-    <li th:each="article : ${articles}" th:attr="data-id=${article.id}">
-        <a class="title" th:href="${article.originalLink != null ? article.originalLink : article.link}"
+<ul id="news-list" th:if="${!articles.isEmpty()}"
+    th:attr="data-now=${serverNow},data-category=${activeCategory}">
+    <li th:each="article : ${articles}"
+        th:attr="data-id=${article.id},data-collected=${article.collectedAtEpochMillis}">
+        <span class="new-badge">NEW</span><a class="title" th:href="${article.originalLink != null ? article.originalLink : article.link}"
            th:text="${article.title}" target="_blank" rel="noopener"></a>
         <p class="desc" th:text="${article.description}"></p>
         <div class="row-meta">
@@ -177,6 +197,38 @@
         }
 
         var items = Array.prototype.slice.call(list.querySelectorAll('li'));
+        var newCount = document.getElementById('new-count');
+
+        // "새 기사" = 이 카테고리를 마지막으로 본 이후에 수집된 기사.
+        // 새로고침해도 표시가 바로 사라지지 않도록 기준 시각은 탭 세션(sessionStorage) 동안 고정한다.
+        var serverNow = Number(list.getAttribute('data-now'));
+        var visitKey = 'newscheck.lastVisit.' + list.getAttribute('data-category');
+        var baseline = null;
+        try {
+            var pinned = sessionStorage.getItem(visitKey);
+            if (pinned === null) {
+                var last = localStorage.getItem(visitKey);
+                pinned = last === null ? 'none' : last;
+                sessionStorage.setItem(visitKey, pinned);
+            }
+            baseline = pinned === 'none' ? null : Number(pinned);
+            localStorage.setItem(visitKey, String(serverNow));
+        } catch (e) {
+            baseline = null;
+        }
+
+        function isNewArticle(li) {
+            // 첫 방문(기준 없음)에는 모든 기사가 새 기사로 표시되지 않도록 한다.
+            return baseline !== null && Number(li.getAttribute('data-collected')) > baseline;
+        }
+
+        function updateNewCount() {
+            var count = items.filter(function (li) {
+                return li.classList.contains('new');
+            }).length;
+            newCount.textContent = '새 기사 ' + count + '건';
+            newCount.hidden = count === 0;
+        }
 
         function applyFilter() {
             var unreadOnly = filterBox.checked;
@@ -184,12 +236,14 @@
             items.forEach(function (li) {
                 var isRead = !!readMap[li.getAttribute('data-id')];
                 li.classList.toggle('read', isRead);
+                li.classList.toggle('new', isNewArticle(li) && !isRead);
                 li.hidden = unreadOnly && isRead;
                 if (!li.hidden) {
                     visible++;
                 }
             });
             emptyMsg.hidden = !(unreadOnly && visible === 0);
+            updateNewCount();
         }
 
         function markRead(li) {
@@ -197,6 +251,8 @@
             saveRead(readMap);
             // 필터가 켜져 있어도 방금 연 기사는 바로 사라지지 않고 흐리게만 표시한다.
             li.classList.add('read');
+            li.classList.remove('new');
+            updateNewCount();
         }
 
         function onLinkOpen(event) {
