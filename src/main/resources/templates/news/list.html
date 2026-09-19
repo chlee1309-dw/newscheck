@@ -80,7 +80,7 @@
     <h1 th:text="'📈 ' + ${pageTitle}"></h1>
     <span class="meta" th:if="${lastCollectedAt != null}">
         마지막 수집: <span th:text="${#temporals.format(lastCollectedAt, 'yyyy-MM-dd HH:mm')}"></span>
-        (5시간 간격 자동 수집)
+        (<span th:text="${collectIntervalHours}"></span>시간 간격 자동 수집)
     </span>
     <span class="meta" th:if="${lastCollectedAt == null}">아직 수집된 뉴스가 없습니다.</span>
 </header>

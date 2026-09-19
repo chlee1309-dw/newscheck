@@ -11,6 +11,10 @@ spring:
 server:
   port: ${PORT:8080}
 
+newscheck:
+  collect:
+    interval: ${COLLECT_INTERVAL:PT1H}
+
 naver:
   api:
     client-id: ${NAVER_CLIENT_ID:}

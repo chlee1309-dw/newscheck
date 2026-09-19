@@ -36,7 +36,7 @@ public class NewsCollectorService {
     private final NaverNewsClient naverNewsClient;
     private final NewsArticleRepository repository;
 
-    @Scheduled(initialDelayString = "PT0S", fixedRateString = "PT5H")
+    @Scheduled(initialDelayString = "PT0S", fixedRateString = "${newscheck.collect.interval:PT1H}")
     public void collectNews() {
         log.info("금융 뉴스 수집을 시작합니다.");
         int savedCount = 0;

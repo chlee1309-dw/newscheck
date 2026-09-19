@@ -4,10 +4,12 @@ import com.example.newscheck.domain.NewsArticle;
 import com.example.newscheck.repository.NewsArticleRepository;
 import com.example.newscheck.service.NewsCollectorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.time.Duration;
 import java.util.List;
 
 @Controller
@@ -15,6 +17,9 @@ import java.util.List;
 public class NewsController {
 
     private final NewsArticleRepository repository;
+
+    @Value("${newscheck.collect.interval:PT1H}")
+    private Duration collectInterval;
 
     @GetMapping("/")
     public String focusList(Model model) {
@@ -42,6 +47,7 @@ public class NewsController {
 
         model.addAttribute("articles", articles);
         model.addAttribute("lastCollectedAt", latest == null ? null : latest.getCollectedAt());
+        model.addAttribute("collectIntervalHours", Math.max(1, collectInterval.toHours()));
         model.addAttribute("pageTitle", pageTitle);
         model.addAttribute("activeCategory", category);
         return "news/list";
